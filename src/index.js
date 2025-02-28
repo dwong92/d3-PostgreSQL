@@ -7,7 +7,9 @@ const root = createRoot(rootElement);
 
 root.render(
   <>
-    <div>PostgreSQL Performance Farm</div>
-    <LinePlot />
+    <h1>PostgreSQL Performance Farm</h1>
+    <div className="chart">
+      <LinePlot />
+    </div>
   </>
 );

@@ -1,14 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
 
-export default function LinePlot({
-  width = 700,
-  height = 460,
-  marginTop = 80,
-  marginRight = 80,
-  marginBottom = 80,
-  marginLeft = 80,
-}) {
+export default function LinePlot() {
   const [data, setData] = useState(null);
   const [filter, setFilter] = useState(10);
   const [selectedGroups, setSelectedGroups] = useState([]);
@@ -16,7 +9,19 @@ export default function LinePlot({
   const svgRef = useRef();
   const [inputValue, setInputValue] = useState(10);
 
+  const dimensions = {
+    width: 700,
+    height: 460,
+    margin: {
+      top: 80,
+      right: 80,
+      left: 80,
+      bottom: 80,
+    },
+  };
+
   useEffect(() => {
+    //data parsing
     d3.dsv(" ", "/sample.csv").then((parsedData) => {
       const formattedData = parsedData
         .map((row) => ({
@@ -37,10 +42,18 @@ export default function LinePlot({
     });
   }, []);
 
+
   useEffect(() => {
     if (!data) return;
 
-    const svg = d3.select(svgRef.current);
+
+    
+    const svg = d3
+      .select(svgRef.current)
+      .attr("width", dimensions.width)
+      .attr("height", dimensions.height)
+
+
     svg.selectAll("*").remove();
 
     const filteredData = data.filter((d) =>
@@ -52,26 +65,20 @@ export default function LinePlot({
       (d) => `${d.plant} - ${d.branch}`
     );
 
-    console.log("groupedData", groupedData)
 
     // Apply slice to show only the last `filter` points for each group
     groupedData.forEach((values, key, map) => {
       map.set(key, values.slice(-filter));
     });
 
-    console.log("groupedData after Slice", groupedData)
-
-
     // Collect all visible data points for scale calculation
     const visibleData = Array.from(groupedData.values()).flat();
-
-    console.log("visibleData", visibleData)
 
     // Update x and y scales based on visibleData
     const x = d3
       .scaleTime()
       .domain(d3.extent(visibleData, (d) => new Date(d.ctime * 1000)))
-      .range([marginLeft, width - marginRight])
+      .range([dimensions.margin.left, dimensions.width - dimensions.margin.right])
       .nice();
 
     const yPadding =
@@ -85,7 +92,7 @@ export default function LinePlot({
         d3.min(visibleData, (d) => d.metric) - yPadding,
         d3.max(visibleData, (d) => d.metric) + yPadding,
       ])
-      .range([height - marginBottom, marginTop])
+      .range([dimensions.height - dimensions.margin.bottom, dimensions.margin.top])
       .nice();
 
     const line = d3
@@ -98,7 +105,7 @@ export default function LinePlot({
       .domain(selectedGroups);
 
     const lineGroup = svg.append("g");
-    
+
     groupedData.forEach((values, key) => {
       lineGroup
         .append("path")
@@ -108,7 +115,6 @@ export default function LinePlot({
         .attr("stroke-width", 1.5)
         .attr("d", line);
 
-        console.log(`${colorScale(key)}`)
     });
 
     // Tooltip setup
@@ -154,15 +160,19 @@ export default function LinePlot({
     // Add x-axis
     svg
       .append("g")
-      .attr("transform", `translate(0, ${height - marginBottom})`)
+      .attr("transform", `translate(0, ${dimensions.height - dimensions.margin.bottom})`)
       .call(d3.axisBottom(x).tickFormat(d3.timeFormat("%m-%d")));
 
     // Add y-axis
     svg
       .append("g")
-      .attr("transform", `translate(${marginLeft}, 0)`)
+      .attr("transform", `translate(${dimensions.margin.left}, 0)`)
       .call(d3.axisLeft(y));
-  }, [data, width, height, marginTop, marginRight, marginBottom, marginLeft, activeGroups, filter]);
+  }, [
+    data,
+    activeGroups,
+    filter,
+  ]);
 
   const handleFilterUpdate = () => {
     if (inputValue > 0) {
@@ -174,9 +184,7 @@ export default function LinePlot({
 
   const toggleGroup = (group) => {
     setActiveGroups((prev) =>
-      prev.includes(group)
-        ? prev.filter((g) => g !== group)
-        : [...prev, group]
+      prev.includes(group) ? prev.filter((g) => g !== group) : [...prev, group]
     );
   };
 
@@ -207,7 +215,7 @@ export default function LinePlot({
         ))}
       </div>
 
-      <svg ref={svgRef} width={width} height={height}></svg>
+      <svg ref={svgRef} width={dimensions.width} height={dimensions.height}></svg>
     </div>
   );
 }

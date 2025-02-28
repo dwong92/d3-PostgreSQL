@@ -13,7 +13,7 @@ module.exports = {
     hot: true,
     liveReload: true,
     static: {
-      directory: path.resolve(__dirname, 'public'),
+      directory: path.resolve(__dirname, "public"),
       publicPath: "/",
     },
   },
@@ -39,6 +39,10 @@ module.exports = {
             },
           },
         ],
+      },
+      {
+        test: /\.css$/i,
+        use: ["style-loader", "css-loader", "postcss-loader"],
       },
     ],
   },
